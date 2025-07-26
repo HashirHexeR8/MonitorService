@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">MonitorApp</string>
+    <string name="accessibility_service_description">Allow this service to control your device remotely.</string>
+       <string name="accessibility_service_label">Remote Control Service</string>
+
+       <!-- <string name="accessibility_service_description">Allows remote control of device actions for
+           testing.
+       </string> -->
+</resources>

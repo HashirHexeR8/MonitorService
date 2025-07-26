@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:gravity="center"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:id="@+id/socketStatusLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:padding="8dp">
+
+        <TextView
+            android:id="@+id/socketStatusText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Socket: Disconnected"
+            android:textSize="16sp"
+            android:layout_marginEnd="8dp" />
+
+        <ImageView
+            android:id="@+id/socketStatusIcon"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:src="@android:drawable/presence_offline"
+            android:tint="#B0B0B0" />
+    </LinearLayout>
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:gravity="center"
+        android:padding="10dp"
+        android:text="Welcome to Monitor App, We will now ask you for relevant permissions." />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="5dp"
+        android:layout_gravity="center"
+        android:gravity="center"
+        android:layout_margin="10dp">
+
+        <Button
+            android:id="@+id/btnAccessService"
+            android:layout_width="200dp"
+            android:layout_height="wrap_content"
+            android:text="Allow Accessibility Access"
+            android:textAllCaps="false" />
+
+        <Button
+            android:id="@+id/btnBatteryPermission"
+            android:layout_width="200dp"
+            android:layout_height="wrap_content"
+            android:text="Allow Battery Optimization"
+            android:textAllCaps="false" />
+
+        <Button
+            android:id="@+id/btnStartBGService"
+            android:layout_width="200dp"
+            android:layout_height="wrap_content"
+            android:text="Start Background Service"
+            android:textAllCaps="false" />
+    </LinearLayout>
+
+    <!-- Status Indicators Row -->
+    <LinearLayout
+        android:id="@+id/statusLayout"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:layout_marginTop="20dp"
+        android:padding="5dp">
+
+        <!-- Accessibility Status -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:layout_marginEnd="15dp">
+
+            <TextView
+                android:id="@+id/statusTextAccessibility"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Accessibility"
+                android:textSize="14sp"
+                android:layout_marginEnd="5dp" />
+
+            <ImageView
+                android:id="@+id/statusIconAccessibility"
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:src="@android:drawable/checkbox_off_background"
+                android:tint="#B0B0B0" />
+        </LinearLayout>
+
+        <!-- Battery Opt Status -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:layout_marginEnd="15dp">
+
+            <TextView
+                android:id="@+id/statusTextBattery"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Battery"
+                android:textSize="14sp"
+                android:layout_marginEnd="5dp" />
+
+            <ImageView
+                android:id="@+id/statusIconBattery"
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:src="@android:drawable/checkbox_off_background"
+                android:tint="#B0B0B0" />
+        </LinearLayout>
+
+        <!-- Service Running Status -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center">
+
+            <TextView
+                android:id="@+id/statusTextService"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Service"
+                android:textSize="14sp"
+                android:layout_marginEnd="5dp" />
+
+            <ImageView
+                android:id="@+id/statusIconService"
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:src="@android:drawable/checkbox_off_background"
+                android:tint="#B0B0B0" />
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <Button
+        android:id="@+id/btnTest"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Test"
+        android:textAllCaps="false"
+        android:layout_marginTop="10dp"/>
+
+    <Button
+        android:id="@+id/btnGetDeviceID"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:enabled="false"
+        android:text="Get Device ID"
+        android:textAllCaps="false"
+        android:layout_marginTop="10dp"/>
+
+    <TextView
+        android:id="@+id/tvDeviceIDInfo"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="15dp"
+        android:layout_marginHorizontal="30dp"/>
+
+</LinearLayout>
