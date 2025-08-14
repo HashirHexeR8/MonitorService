@@ -1,17 +1,17 @@
-package com.example.monitorapp.utils
+package com.example.monitorapp.network
 
 import android.content.Context
 import android.content.Intent
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
+import com.example.monitorapp.utils.SharedPrefsHelper
 import io.socket.client.IO
 import io.socket.client.Socket
 import org.json.JSONObject
 import java.lang.ref.WeakReference
 import java.net.URISyntaxException
 import java.util.concurrent.Executors
-import com.google.gson.Gson
 
 object SocketManager {
     private const val TAG = "SocketManager"
@@ -144,4 +144,4 @@ object SocketManager {
     fun isConnected(): Boolean {
         return isConnected
     }
-} 
+}

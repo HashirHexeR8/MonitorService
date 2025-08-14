@@ -8,7 +8,7 @@ import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.example.monitorapp.MainActivity
 import com.example.monitorapp.R
-import com.example.monitorapp.utils.SocketManager
+import com.example.monitorapp.network.SocketManager
 
 class ForegroundService : Service() {
 

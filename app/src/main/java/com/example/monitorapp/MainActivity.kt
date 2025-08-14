@@ -8,14 +8,22 @@ import android.net.Uri
 import android.os.*
 import android.provider.Settings
 import android.graphics.Color
+import android.util.Log
 import android.widget.ImageView
+import android.widget.Toast
+import androidx.compose.material3.Snackbar
 import androidx.core.content.ContextCompat
 import com.example.monitorapp.databinding.ActivityMainBinding
+import com.example.monitorapp.network.DeviceNetworkService
 import com.example.monitorapp.services.ForegroundService
 import com.example.monitorapp.services.RemoteAccessibilityService
 import com.example.monitorapp.utils.SharedPrefsHelper
 import com.example.monitorapp.utils.Utilities
-import com.example.monitorapp.utils.SocketManager
+import com.example.monitorapp.network.SocketManager
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import okhttp3.Dispatcher
 
 class MainActivity : Activity(), SocketManager.ConnectionListener {
 
@@ -50,13 +58,28 @@ class MainActivity : Activity(), SocketManager.ConnectionListener {
         }
 
         viewBinding.btnTest.setOnClickListener {
+            CoroutineScope(Dispatchers.IO).launch {
+                try {
+                    val response = DeviceNetworkService.registerDevice()
+                    Log.d("MainActivity", "Response from server: $response")
+                    Toast.makeText(this@MainActivity, "$response", Toast.LENGTH_LONG).show()
+                    if (response.statusCode == 200) {
+                        runOnUiThread {
+                            Toast.makeText(this@MainActivity, "$response", Toast.LENGTH_LONG).show()
+                        }
+                    }
+                }
+                catch (exception: Exception) {
+                    Log.e("MainActivity", "Error during network call", exception)
+                }
+            }
             SocketManager.connect(this)
             updateSocketStatusUI()
             android.widget.Toast.makeText(this, "Connecting to server...", android.widget.Toast.LENGTH_SHORT).show()
         }
 
         viewBinding.btnGetDeviceID.setOnClickListener {
-            val deviceID = Utilities.generateUniqueDeviceID()
+            val deviceID = Utilities.generateShortId()
             SharedPrefsHelper.saveDeviceId(this@MainActivity, deviceId = deviceID)
             "Your unique device ID is: $deviceID. Enter this ID on the other device to register and start the connection.".also { viewBinding.tvDeviceIDInfo.text = it }
         }

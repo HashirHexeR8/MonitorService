@@ -58,4 +58,5 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
     implementation("io.socket:socket.io-client:2.1.0") { exclude(group = "org.json", module = "json") }
+    implementation("androidx.security:security-crypto:1.1.0")
 }

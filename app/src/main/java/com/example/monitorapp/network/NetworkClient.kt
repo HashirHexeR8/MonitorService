@@ -1,9 +1,8 @@
-package com.example.monitorapp.utils
+package com.example.monitorapp.network
 
 import com.google.gson.Gson
 import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaType
-import java.io.IOException
 
 object NetworkClient {
 
