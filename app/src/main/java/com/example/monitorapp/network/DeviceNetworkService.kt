@@ -1,14 +1,16 @@
 package com.example.monitorapp.network
 
+import android.content.Context
 import android.os.Build
 import com.example.monitorapp.model.DeviceRegistrationRequest
 import com.example.monitorapp.model.NetworkResponseDTO
+import com.example.monitorapp.utils.SharedPrefsHelper
 import com.example.monitorapp.utils.Utilities
 
 object DeviceNetworkService {
 
-    suspend fun registerDevice(): NetworkResponseDTO<String> {
-        val deviceName = Build.DEVICE ?: "Unknown"
+    suspend fun registerDevice(context: Context): NetworkResponseDTO<String> {
+        val deviceName = SharedPrefsHelper.getDeviceName(context) ?: "Unknown"
         val deviceModel = "${Build.MANUFACTURER} ${Build.MODEL}".trim()
         val deviceId = Utilities.generateShortId()
 
@@ -23,11 +25,18 @@ object DeviceNetworkService {
             clientSecretKey = secretKey
         )
 
-        // Call your API
-        return NetworkClient.post(
-            url = NetworkConstants.BASE_URL + NetworkConstants.REGISTER_DEVICE_ENDPOINT,
+        val response = NetworkClient.post(
+            url = "${NetworkConstants.BASE_URL}${NetworkConstants.REGISTER_DEVICE_ENDPOINT}",
             bodyObj = request
-        ) ?: NetworkResponseDTO(404, "Request failed", null)
+        ) as NetworkResponseDTO<String>?
+        if (response?.statusCode == 200) {
+            SharedPrefsHelper.saveDeviceId(context, deviceId)
+        }
+        else {
+            return NetworkResponseDTO(404, "Request failed", null)
+        }
+        // Call your API
+        return response
     }
 
 }

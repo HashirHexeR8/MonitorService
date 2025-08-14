@@ -9,9 +9,9 @@ import android.os.*
 import android.provider.Settings
 import android.graphics.Color
 import android.util.Log
+import android.widget.EditText
 import android.widget.ImageView
 import android.widget.Toast
-import androidx.compose.material3.Snackbar
 import androidx.core.content.ContextCompat
 import com.example.monitorapp.databinding.ActivityMainBinding
 import com.example.monitorapp.network.DeviceNetworkService
@@ -19,11 +19,11 @@ import com.example.monitorapp.services.ForegroundService
 import com.example.monitorapp.services.RemoteAccessibilityService
 import com.example.monitorapp.utils.SharedPrefsHelper
 import com.example.monitorapp.utils.Utilities
+import com.example.monitorapp.utils.NetworkUtils
 import com.example.monitorapp.network.SocketManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import okhttp3.Dispatcher
 
 class MainActivity : Activity(), SocketManager.ConnectionListener {
 
@@ -38,12 +38,118 @@ class MainActivity : Activity(), SocketManager.ConnectionListener {
         viewBinding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(viewBinding.root)
 
+        // Check registration status first
+        if (!SharedPrefsHelper.isDeviceRegistered(this)) {
+            showRegistrationFlow()
+        } else {
+            // Device is registered, proceed with normal app flow
+            initializeApp()
+        }
+    }
+
+    private fun showRegistrationFlow() {
+        // Check network connectivity first
+        if (!NetworkUtils.isNetworkAvailable(this)) {
+            showNetworkErrorDialog()
+            return
+        }
+
+        // Show device name input dialog
+        showDeviceNameDialog()
+    }
+
+    private fun showNetworkErrorDialog() {
+        AlertDialog.Builder(this)
+            .setTitle("Network Required")
+            .setMessage("Please connect to the internet to register your device.")
+            .setPositiveButton("Retry") { _, _ ->
+                showRegistrationFlow()
+            }
+            .setNegativeButton("Exit") { _, _ ->
+                finish()
+            }
+            .setCancelable(false)
+            .show()
+    }
+
+    private fun showDeviceNameDialog() {
+        val input = EditText(this)
+        input.hint = "Enter device name"
+
+        AlertDialog.Builder(this)
+            .setTitle("Device Registration")
+            .setMessage("Please enter a name for this device:")
+            .setView(input)
+            .setPositiveButton("Register") { _, _ ->
+                val deviceName = input.text.toString().trim()
+                if (deviceName.isNotEmpty()) {
+                    SharedPrefsHelper.saveDeviceName(this, deviceName)
+                    registerDeviceWithServer()
+                } else {
+                    Toast.makeText(this, "Please enter a device name", Toast.LENGTH_SHORT).show()
+                    showDeviceNameDialog()
+                }
+            }
+            .setNegativeButton("Cancel") { _, _ ->
+                finish()
+            }
+            .setCancelable(false)
+            .show()
+    }
+
+    private fun registerDeviceWithServer() {
+        // Show loading state
+        viewBinding.root.alpha = 0.5f
+        Toast.makeText(this, "Registering device...", Toast.LENGTH_SHORT).show()
+
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val response = DeviceNetworkService.registerDevice(this@MainActivity)
+                
+                runOnUiThread {
+                    viewBinding.root.alpha = 1.0f
+                    
+                    if (response.statusCode == 200) {
+                        // Registration successful
+                        SharedPrefsHelper.setDeviceRegistered(this@MainActivity, true)
+                        Toast.makeText(this@MainActivity, "Device registered successfully!", Toast.LENGTH_LONG).show()
+                        initializeApp()
+                    } else {
+                        // Registration failed
+                        Toast.makeText(this@MainActivity, "Registration failed: ${response}", Toast.LENGTH_LONG).show()
+                        showRegistrationFlow()
+                    }
+                }
+            } catch (exception: Exception) {
+                runOnUiThread {
+                    viewBinding.root.alpha = 1.0f
+                    Log.e("MainActivity", "Registration error", exception)
+                    Toast.makeText(this@MainActivity, "Registration failed: ${exception.message}", Toast.LENGTH_LONG).show()
+                    showRegistrationFlow()
+                }
+            }
+        }
+    }
+
+    private fun initializeApp() {
+        // Request permissions
         if (Build.VERSION.SDK_INT > Build.VERSION_CODES.TIRAMISU) {
             requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 1)
         }
 
         showPermissionDialog()
 
+        // Set up UI
+        setupUI()
+        updateRegistrationStatusUI()
+        
+        // Check if all requirements are met for socket connection
+        if (areAllRequirementsMet()) {
+            connectToSocket()
+        }
+    }
+
+    private fun setupUI() {
         viewBinding.btnAccessService.setOnClickListener {
             promptAccessibilitySettings(this@MainActivity)
         }
@@ -53,43 +159,37 @@ class MainActivity : Activity(), SocketManager.ConnectionListener {
         }
 
         viewBinding.btnStartBGService.setOnClickListener {
-            val serviceIntent = Intent(this, ForegroundService::class.java)
-            startForegroundService(serviceIntent)
-        }
-
-        viewBinding.btnTest.setOnClickListener {
-            CoroutineScope(Dispatchers.IO).launch {
-                try {
-                    val response = DeviceNetworkService.registerDevice()
-                    Log.d("MainActivity", "Response from server: $response")
-                    Toast.makeText(this@MainActivity, "$response", Toast.LENGTH_LONG).show()
-                    if (response.statusCode == 200) {
-                        runOnUiThread {
-                            Toast.makeText(this@MainActivity, "$response", Toast.LENGTH_LONG).show()
-                        }
-                    }
-                }
-                catch (exception: Exception) {
-                    Log.e("MainActivity", "Error during network call", exception)
-                }
+            if (areAllRequirementsMet()) {
+                val serviceIntent = Intent(this, ForegroundService::class.java)
+                startForegroundService(serviceIntent)
+                connectToSocket()
+            } else {
+                Toast.makeText(this, "Please enable all required permissions first", Toast.LENGTH_LONG).show()
             }
+        }
+    }
+
+    private fun areAllRequirementsMet(): Boolean {
+        return isAccessibilityServiceEnabled() && 
+               isIgnoringBatteryOptimizations() && 
+               NetworkUtils.isNetworkAvailable(this)
+    }
+
+    private fun connectToSocket() {
+        if (areAllRequirementsMet()) {
             SocketManager.connect(this)
             updateSocketStatusUI()
-            android.widget.Toast.makeText(this, "Connecting to server...", android.widget.Toast.LENGTH_SHORT).show()
-        }
-
-        viewBinding.btnGetDeviceID.setOnClickListener {
-            val deviceID = Utilities.generateShortId()
-            SharedPrefsHelper.saveDeviceId(this@MainActivity, deviceId = deviceID)
-            "Your unique device ID is: $deviceID. Enter this ID on the other device to register and start the connection.".also { viewBinding.tvDeviceIDInfo.text = it }
         }
     }
 
     override fun onResume() {
         super.onResume()
-        refreshAllStatuses()
-        SocketManager.addConnectionListener(this)
-        updateSocketStatusUI()
+        if (SharedPrefsHelper.isDeviceRegistered(this)) {
+            refreshAllStatuses()
+            SocketManager.addConnectionListener(this)
+            updateSocketStatusUI()
+        }
+        updateRegistrationStatusUI()
     }
 
     override fun onPause() {
@@ -101,15 +201,6 @@ class MainActivity : Activity(), SocketManager.ConnectionListener {
         updateStatus(StatusType.ACCESSIBILITY, isAccessibilityServiceEnabled())
         updateStatus(StatusType.BATTERY, isIgnoringBatteryOptimizations())
         updateStatus(StatusType.SERVICE, ForegroundService.isRunning)
-        val deviceID = SharedPrefsHelper.getDeviceId(this@MainActivity)
-        if (!deviceID.isNullOrEmpty()) {
-            viewBinding.btnGetDeviceID.isEnabled = false
-            "Your unique device ID is: $deviceID. Enter this ID on the other device to register and start the connection.".also { viewBinding.tvDeviceIDInfo.text = it }
-        }
-        else {
-            viewBinding.btnGetDeviceID.isEnabled = true
-            viewBinding.tvDeviceIDInfo.text = ""
-        }
     }
 
     private fun showPermissionDialog() {
@@ -167,12 +258,6 @@ class MainActivity : Activity(), SocketManager.ConnectionListener {
             icon.setImageResource(android.R.drawable.checkbox_off_background)
             icon.setColorFilter(Color.GRAY)
         }
-
-        enableDeviceIdInfo()
-    }
-
-    private fun enableDeviceIdInfo() {
-        viewBinding.btnGetDeviceID.isEnabled = isAccessibilityServiceEnabled() && isIgnoringBatteryOptimizations() && ForegroundService.isRunning
     }
 
     private fun updateSocketStatusUI() {
@@ -183,6 +268,17 @@ class MainActivity : Activity(), SocketManager.ConnectionListener {
         )
         viewBinding.socketStatusIcon.setColorFilter(
             if (isConnected) Color.parseColor("#4CAF50") else Color.GRAY
+        )
+    }
+
+    private fun updateRegistrationStatusUI() {
+        val isRegistered = SharedPrefsHelper.isDeviceRegistered(this)
+        viewBinding.registrationStatusText.text = if (isRegistered) "Registration: Complete" else "Registration: Pending"
+        viewBinding.registrationStatusIcon.setImageResource(
+            if (isRegistered) android.R.drawable.presence_online else android.R.drawable.presence_offline
+        )
+        viewBinding.registrationStatusIcon.setColorFilter(
+            if (isRegistered) Color.parseColor("#4CAF50") else Color.GRAY
         )
     }
 
